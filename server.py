@@ -14,6 +14,22 @@ moduloP = 31
 private_key = random.randint(500,4000)
 llaveAes = 0
 
+async def send_encription_key(websocket):
+    
+    archivo = open("keystorage.txt","r")
+    
+    llave = archivo.read()
+    
+    print("---------\n\n\n",llave,"\n\n\n--------")
+    
+    archivo.close()
+    
+    data={
+        "event": "serverEncriptionKey",
+        "key":llave
+    }
+    
+    await websocket.send(json.dumps(data))
 
 async def send_public_key(websocket):
 
@@ -45,7 +61,9 @@ async def get_shared_key(websocket, computedClient):
     
     print("llave aes: ",llave_string)
     
-    llaveAes = llave_string
+    archivo = open("keystorage.txt","w")
+    archivo.write(llave_string)
+    archivo.close
     
     data = {
         "event": "close",
@@ -72,7 +90,9 @@ async def handler(websocket):
                 
                 await get_shared_key(websocket,message["computedValue"])
 
-               # print(shared_key)
+            case "sendEncriptionKey":
+                
+                await send_encription_key(websocket)
 
             case _:
                 print("default")
