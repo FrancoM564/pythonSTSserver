@@ -2,17 +2,20 @@ import json
 import asyncio
 import websockets
 import hashlib
-import base64
 import random
-from cryptography.hazmat.primitives.asymmetric import dh
-from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+import psycopg2
 from cryptography.hazmat.backends import default_backend
 
 baseG = 12
 moduloP = 31
 private_key = random.randint(500,4000)
 llaveAes = 0
+conn = psycopg2.connect(database="keys",
+                        host="localhost",
+                        user="postgres",
+                        password="123",
+                        port="5432")
+
 
 async def send_encription_key(websocket):
     
@@ -61,6 +64,14 @@ async def get_shared_key(websocket, computedClient):
     
     print("llave aes: ",llave_string)
     
+    #aqui guardar la llave
+    cursor = conn.cursor()
+    
+    sql = "INSERT INTO encode_keys (encoding) VALUES (%s)"
+    
+    cursor.execute(sql,llave_string)
+    conn.commit()
+    
     archivo = open("keystorage.txt","w")
     archivo.write(llave_string)
     archivo.close
@@ -70,6 +81,18 @@ async def get_shared_key(websocket, computedClient):
     }
     
     await websocket.send(json.dumps(data))
+    
+async def save_contract_address_key(websocket,address):
+    
+    print("direccion recibida\n")
+    
+    data = {
+        "event": "close",
+    }
+    
+    await websocket.send(json.dumps(data))
+    
+    
 
 async def handler(websocket):
     print("Hola, bienvenido al centro de proteccion de llaves")
@@ -93,6 +116,10 @@ async def handler(websocket):
             case "sendEncriptionKey":
                 
                 await send_encription_key(websocket)
+                
+            case "saveAndRelateAddressToKey":
+                
+                await save_contract_address_key(websocket,message["contract_address"])
 
             case _:
                 print("default")
