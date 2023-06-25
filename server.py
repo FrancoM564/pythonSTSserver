@@ -67,9 +67,9 @@ async def get_shared_key(websocket, computedClient):
     #aqui guardar la llave
     cursor = conn.cursor()
     
-    sql = "INSERT INTO encode_keys (encoding) VALUES (%s)"
+    sql = "INSERT INTO keys (keys,contract_address,report_address) VALUES (%s,%s,%s)"
     
-    cursor.execute(sql,llave_string)
+    cursor.execute(sql,(llave_string,"",""))
     conn.commit()
     
     archivo = open("keystorage.txt","w")
@@ -82,9 +82,17 @@ async def get_shared_key(websocket, computedClient):
     
     await websocket.send(json.dumps(data))
     
-async def save_contract_address_key(websocket,address):
+async def save_contract_addresses_key(websocket,address1,address2,key):
     
     print("direccion recibida\n")
+    #aqui guardar la llave
+    cursor = conn.cursor()
+    
+    sql = "UPDATE keys SET contract_address = %s,report_address = %s WHERE keys = %s"
+    
+    cursor.execute(sql,(address1,address2,key))
+    conn.commit()
+    
     
     data = {
         "event": "close",
@@ -119,7 +127,9 @@ async def handler(websocket):
                 
             case "saveAndRelateAddressToKey":
                 
-                await save_contract_address_key(websocket,message["contract_address"])
+                print(message)
+                
+                await save_contract_addresses_key(websocket,message["contract_address"],message["report_address"],message["key"])
 
             case _:
                 print("default")
